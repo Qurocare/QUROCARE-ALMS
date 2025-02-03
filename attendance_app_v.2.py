@@ -44,8 +44,16 @@ leaves_sheet = sheet.worksheet("leaves")
 # Load CSV files
 def load_data():
     employees = pd.DataFrame(employees_sheet.get_all_records())
-    attendance = pd.DataFrame(attendance_sheet.get_all_records())
-    leaves = pd.DataFrame(leaves_sheet.get_all_records())
+    #attendance = pd.DataFrame(attendance_sheet.get_all_records())
+    #leaves = pd.DataFrame(leaves_sheet.get_all_records())
+
+    # Define expected columns
+    attendance_columns = ["id", "name", "email", "registered_id", "clock_in", "clock_out", "duration", "status"]
+    leaves_columns = ["id", "name", "email", "registered_id", "start_date", "end_date", "reason"]
+
+    # Create DataFrames directly from sheet data
+    attendance = pd.DataFrame(attendance_sheet.get_all_records()) if attendance_sheet.get_all_records() else pd.DataFrame(columns=attendance_columns)
+    leaves = pd.DataFrame(leaves_sheet.get_all_records()) if leaves_sheet.get_all_records() else pd.DataFrame(columns=leaves_columns)
 
     # Convert 'passkey' column to string
     employees["passkey"] = employees["passkey"].astype(str)
