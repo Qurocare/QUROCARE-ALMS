@@ -197,6 +197,11 @@ if name != "Select Your Name" and passkey:
                 st.session_state.clock_out_time = None
 
         # Leave Application Section
+        st.subheader("Apply for Leave")
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
+        reason = st.text_area("Reason")  # Keep this to allow users to enter a reason
+        
         if st.button("Apply Leave"):
             # Ensure dates are valid
             if start_date > end_date:
