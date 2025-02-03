@@ -20,7 +20,7 @@ service_account_key = st.secrets.get("gcp_service_account")
 credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scope)
 
 # Constants
-ADMIN_EMAIL = "vysakharaghavan@gmail.com"
+ADMIN_EMAIL = "777bizcentre@gmail.com"
 REMINDER_THRESHOLD = timedelta(hours=10)  # 10 hours threshold
 
 # Use the service account dictionary directly from Streamlit secrets
@@ -137,8 +137,15 @@ if name != "Select Your Name" and passkey:
             if st.session_state.clock_in_time is None:
                 # Clock In action
                 if st.button("Clock In"):
-                    clock_in_time = datetime.now().strftime("%H:%M")
-                    status = "Half Day" if datetime.strptime(clock_in_time, "%H:%M") > (datetime.strptime(actual_clock_in, "%H:%M") + timedelta(minutes=10)) else "Full Day"
+                    #clock_in_time = datetime.now().strftime("%H:%M")
+                    ist = pytz.timezone("Asia/Kolkata")
+                    clock_in_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")  # Includes date
+                    # Convert actual_clock_in to datetime and add 10-minute buffer
+                    actual_clock_in_dt = datetime.strptime(actual_clock_in, "%H:%M")  
+                    actual_clock_in_dt = datetime.combine(datetime.today(), actual_clock_in_dt.time()) + timedelta(minutes=10)
+                    # Compare and set status
+                    status = "Half Day" if datetime.strptime(clock_in_time, "%Y-%m-%d %H:%M:%S") > actual_clock_in_dt else "Full Day"
+                    #status = "Half Day" if datetime.strptime(clock_in_time, "%H:%M") > (datetime.strptime(actual_clock_in, "%H:%M") + timedelta(minutes=10)) else "Full Day"
                     new_entry = pd.DataFrame({
                         "id": [len(attendance) + 1],
                         "name": [name],
@@ -158,9 +165,13 @@ if name != "Select Your Name" and passkey:
             elif st.session_state.clock_in_time is not None and st.session_state.clock_out_time is None:
                 # Clock Out action
                 if st.button("Clock Out"):
-                    clock_out_time = datetime.now().strftime("%H:%M")
+                    ist = pytz.timezone("Asia/Kolkata")
+                    clock_out_time = datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")  # Full datetime
+                    #clock_out_time = datetime.now().strftime("%H:%M")
                     clock_in_time = st.session_state.clock_in_time
-                    duration = (datetime.strptime(clock_out_time, "%H:%M") - datetime.strptime(clock_in_time, "%H:%M")).seconds / 3600
+                    #duration = (datetime.strptime(clock_out_time, "%H:%M") - datetime.strptime(clock_in_time, "%H:%M")).seconds / 3600
+                    duration = (datetime.strptime(clock_out_time, "%Y-%m-%d %H:%M:%S") -
+                                datetime.strptime(clock_in_time, "%Y-%m-%d %H:%M:%S")).seconds / 3600
                     attendance.loc[attendance["clock_in"] == clock_in_time, ["clock_out", "duration"]] = [clock_out_time, duration]
                     save_data_to_google_sheets(attendance, "attendance")
                     st.session_state.clock_out_time = clock_out_time
