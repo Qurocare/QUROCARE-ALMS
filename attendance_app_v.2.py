@@ -197,39 +197,54 @@ if name != "Select Your Name" and passkey:
                 st.session_state.clock_out_time = None
 
         # Leave Application Section
-        st.subheader("Apply for Leave")
-        start_date = st.date_input("Start Date")
-        end_date = st.date_input("End Date")
-        reason = st.text_area("Reason")
-        
         if st.button("Apply Leave"):
-            new_leave = pd.DataFrame({
-                "id": [len(leaves) + 1],
-                "name": [name],
-                "email": [user["email"]],
-                "registered_id": [user["registered_id"]],
-                "start_date": [start_date],
-                "end_date": [end_date],
-                "reason": [reason]
-            })
-            leaves = pd.concat([leaves, new_leave], ignore_index=True)
-            save_data_to_google_sheets(leaves, "leaves")
-            #send_email(ADMIN_EMAIL, "New Leave Request", f"{name} applied for leave from {start_date} to {end_date}.")
-            send_email(
-               ADMIN_EMAIL, 
-               "New Leave Request", 
-               f"Employee Name: {name}\n"
-               f"Email: {user['email']}\n"
-               f"Start Date: {start_date}\n"
-               f"End Date: {end_date}\n"
-               f"Reason: {reason}\n\n"
-               "Kindly respond to this leave application."
-            )
-            st.success("Leave Applied Successfully! Notification sent to Admin.")
+            # Ensure dates are valid
+            if start_date > end_date:
+                st.error("End date cannot be before start date.")
+            else:
+                # Convert dates to strings
+                start_date_str = start_date.strftime("%Y-%m-%d")
+                end_date_str = end_date.strftime("%Y-%m-%d")
+
+                # Check for overlapping leave requests
+                existing_leaves = leaves[(leaves["name"] == name) & 
+                                 ((leaves["start_date"] <= start_date_str) & (leaves["end_date"] >= start_date_str)) |
+                                 ((leaves["start_date"] <= end_date_str) & (leaves["end_date"] >= end_date_str))]
+        
+                if not existing_leaves.empty:
+                    st.error("You already have a leave request for these dates.")
+                else:
+                    new_leave = pd.DataFrame({
+                        "id": [len(leaves) + 1],
+                        "name": [name],
+                        "email": [user["email"]],
+                        "registered_id": [user["registered_id"]],
+                        "start_date": [start_date_str],
+                        "end_date": [end_date_str],
+                        "reason": [reason]  # Added missing reason
+                    })
+
+                    # Append new leave entry
+                    leaves = pd.concat([leaves, new_leave], ignore_index=True)
+                    save_data_to_google_sheets(leaves, "leaves")  # Ensure this function works properly
+
+                    # Send email notification to Admin
+                    send_email(
+                        ADMIN_EMAIL, 
+                        "New Leave Request", 
+                        f"Employee Name: {name}\n"
+                        f"Email: {user['email']}\n"
+                        f"Start Date: {start_date_str}\n"
+                        f"End Date: {end_date_str}\n"
+                        f"Reason: {reason}\n\n"
+                        "Kindly respond to this leave application."
+                    )
+
+                    st.success("Leave applied successfully! Notification sent to Admin.")
                 
         # Logout Button
-        if st.button("Logout"):
-            st.experimental_rerun()  # This will refresh the page for re-login
+        #if st.button("Logout"):
+            #st.experimental_rerun()  # This will refresh the page for re-login
         
 else:
     if name == "Select Your Name":
